@@ -1,0 +1,17 @@
+{
+  "name": "zvanoz/web-agent-emulator",
+  "type": "project",
+  "version": "0.0.1",
+  "description": "Emulator of WebAgent service",
+  "license": "@see: LICENSE.md",
+  "keywords": [
+    "zvanoz",
+    "zvanoz/web-agent-emulator"
+  ],
+  "config": {
+    "sort-packages": true
+  },
+  "require": {
+    "php": ">=8.1"
+  }
+}

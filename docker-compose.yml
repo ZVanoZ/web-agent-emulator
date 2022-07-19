@@ -1,0 +1,28 @@
+version: '3.5'
+
+services:
+  web-agent-server:
+    image: local/web-agent-emulator-apache
+    container_name: local.web-agent-server
+    build:
+      context: docker/web-agent-emulator-apache
+      dockerfile: Dockerfile
+    ports:
+      - "8022:80"
+    volumes:
+      - ./configs:/app/configs
+      - ./src/web-agent-server/www:/app/www
+      - ./src/web-agent-server/scripts/initialize.sh:/app/scripts/initialize.sh
+    env_file:
+      - ./.env
+  web-agent-client:
+    image: local/web-agent-emulator-apache
+    container_name: local.web-agent-client
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src/web-agent-client/www:/app/www
+    links:
+      - web-agent-server
+    env_file:
+      - ./.env

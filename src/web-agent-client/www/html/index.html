@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>web-agent-client</title>
+</head>
+<body>
+<ul>
+    <img src="favicon.ico" width=64 style="position: absolute; right: 1em">
+    <form>
+        <label>Base URL:</label>
+        <input type="text" name='BASE_URL' value="http://127.0.0.1:8022">
+        <br>
+        <label>API version:</label>
+        <input type="text" name='API_VERSION' value="1">
+        <br>
+        <label>header("Accept-Language"):</label>
+        <select name="HEADER_ACCEPT_LANGUAGE">
+            <option value="en">en - English</option>
+            <option value="uk">uk - Ukraine</option>
+            <option value="ru">ru - Russian (without translation)</option>
+            <option value="">"" - empty value</option>
+        </select>
+    </form>
+    <li>
+        <button onclick="APP.getPhoto()">Get photo</button>
+    </li>
+</ul>
+</body>
+<script>
+	const APP = {
+		getBaseUrl: function() {
+			const result = document.querySelector('input[name="BASE_URL"]').value;
+			return result;
+		},
+		getApiVersion: function() {
+			const result = document.querySelector('input[name="API_VERSION"]').value;
+			return result;
+		},
+		getHeaderAcceptLanguage: function() {
+			const result = document.querySelector('select[name="HEADER_ACCEPT_LANGUAGE"]').value;
+			return result;
+		},
+		getPhoto: function() {
+			let url =
+				this.sendByXhr({
+					method: 'GET',
+					url: this.getBaseUrl() + '/photo',
+					body: {
+						hello: 'world'
+					},
+					headers: {
+						'X-API-VERSION': this.getApiVersion(),
+						'Accept-Language': this.getHeaderAcceptLanguage()
+					},
+					onSuccess: function(xhr, json) {
+
+					}.bind(this),
+					onFailure: function(xhr) {
+
+					}.bind(this),
+				});
+		},
+		/**
+		 *
+		 * @param {Object} options
+		 * @param {string} options.method
+		 * @param {string} options.url
+		 * @param {object|undefined} options.headers
+		 * @param {object|string} options.body
+		 * @param {function} options.onSuccess
+		 * @param {function} options.onFailure
+		 */
+		sendByXhr: function(options) {
+			if (typeof (options.headers) !== 'object') {
+				options.headers = {};
+			}
+			let xhr = new XMLHttpRequest();
+			xhr.open(options.method, options.url);
+			for (headerName in options.headers) {
+				xhr.setRequestHeader(headerName, options.headers[headerName]);
+			}
+			if (!('Accept-Language' in options.headers)) {
+				xhr.setRequestHeader('Accept-Language', 'uk');
+			}
+			if (!('Content-Type' in options.headers)) {
+				xhr.setRequestHeader('Content-Type', 'application/json');
+			}
+			var body = typeof (options.body) === 'object' ? JSON.stringify(options.body) : options.body;
+			xhr.send(body);
+
+			xhr.addEventListener('readystatechange', () => {
+				if (xhr.readyState !== 4) {
+					return;
+				}
+				if (xhr.status !== 200) {
+					return options.onFailure(xhr);
+				}
+				var json;
+				try {
+					json = JSON.parse(xhr.responseText);
+				} catch (e) {
+					console.log(e)
+				}
+				options.onSuccess(xhr, json);
+			});
+		}
+	}
+</script>
+</html>

@@ -1,0 +1,15 @@
+AddDefaultCharset UTF-8
+Options +FollowSymlinks
+Options +Indexes
+
+#<IfModule mod_rewrite.c>
+#	RewriteEngine On
+#	RewriteBase /
+#	RewriteRule ^(.*/)?\.svn/ - [F]
+#
+#	RewriteCond %{REQUEST_FILENAME} -s [OR]
+#	RewriteCond %{REQUEST_FILENAME} -l [OR]
+#	RewriteCond %{REQUEST_FILENAME} -d
+#	RewriteRule ^.*$ - [NC,L]
+#	RewriteRule ^.*$ /tests/404.php [NC,L]
+#</IfModule>
