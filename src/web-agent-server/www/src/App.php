@@ -21,10 +21,6 @@ class App
         $this->method = $_SERVER['REQUEST_METHOD'];
         $this->origin = @$_SERVER['HTTP_ORIGIN'];
 
-        $this->setXhrHeaders();
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            return null;
-        }
         if (!$this->checkOrigin()) {
             $this->sendJson([
                 'success' => false,
@@ -33,6 +29,10 @@ class App
                     'uk' => 'Забороненв обробка запитів з вашого домена'
                 ]),
             ], 403);
+            return null;
+        }
+        $this->setXhrHeaders();
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             return null;
         }
         if (!$this->checkApiVersion()) {
