@@ -84,9 +84,51 @@ class App
 
     protected function actionPhoto(): void
     {
+        $imgWidth = 320;
+        $imgHeight = 240;
+        $imgFormat = 'jpeg';
+        /**
+         * @var GdImage $gdImage
+         */
+        $gdImage = imagecreate($imgWidth, $imgHeight);
+        $backgroundColor = imagecolorallocate($gdImage, 146, 133, 133);
+        $textColor = imagecolorallocate($gdImage, 0, 0, 255);
+        imagestring($gdImage, 5, 5, 5,
+            $this->translate([
+                'en' => 'Generated at: ',
+                'uk' => 'Створено: ',
+            ]), $textColor
+        );
+        imagestring($gdImage, 5, 5, 25, (new \DateTime())->format('Y-n-d h:i:s'), $textColor);
+
+        //imagepng($handler);
+        @ob_clean();
+        @ob_start();
+        if ($imgFormat == 'jpeg') {
+            imagejpeg($gdImage);
+        } elseif ($imgFormat == 'png') {
+            imagepng($gdImage);
+        }
+        imagedestroy($gdImage);
+        $img = ob_get_contents();
+        @ob_clean();
+        if (empty($img)) {
+            $this->sendJson([
+                'success' => false,
+                'message' => $this->translate([
+                    'en' => 'Image is empty',
+                    'uk' => 'Зображення не існує',
+                ])
+            ], 400);
+        }
+        $img = base64_encode($img);
         $this->sendJson([
             'success' => true,
-            'result' => '...BASE64...'
+            'result' => [
+                'data' => $img,
+                'mimetype' => 'image/jpeg',
+                'encoding' => 'base64' //
+            ]
         ], 200);
     }
 
@@ -112,13 +154,16 @@ class App
         return true;
     }
 
-    protected function translate(array $values)
+    protected function translate(array $values): string
     {
         $lang = $this->getHeader('Accept-Language');
-        if(!in_array($lang, static::ALLOW_LANG)){
+        if (!in_array($lang, static::ALLOW_LANG)) {
             $lang = static::DEFAULT_LANG;
         }
         $result = @$values[$lang];
+        if (!is_string($result)) {
+            $result = '';
+        }
         return $result;
     }
 

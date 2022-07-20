@@ -5,27 +5,44 @@
     <title>web-agent-client</title>
 </head>
 <body>
-<ul>
-    <img src="favicon.ico" width=64 style="position: absolute; right: 1em">
-    <form>
-        <label>Base URL:</label>
-        <input type="text" name='BASE_URL' value="http://127.0.0.1:8022">
-        <br>
-        <label>API version:</label>
-        <input type="text" name='API_VERSION' value="1">
-        <br>
-        <label>header("Accept-Language"):</label>
-        <select name="HEADER_ACCEPT_LANGUAGE">
-            <option value="en">en - English</option>
-            <option value="uk">uk - Ukraine</option>
-            <option value="ru">ru - Russian (without translation)</option>
-            <option value="">"" - empty value</option>
-        </select>
-    </form>
-    <li>
-        <button onclick="APP.getPhoto()">Get photo</button>
-    </li>
-</ul>
+
+<img src="favicon.ico" width=64 style="position: absolute; right: 1em">
+<div>
+    <a href="phpinfo.php">phpinfo</a>
+</div>
+<form>
+    <label>Base URL:</label>
+    <input type="text" name='BASE_URL' value="http://127.0.0.1:8022">
+    <br>
+    <label>API version:</label>
+    <input type="text" name='API_VERSION' value="1">
+    <br>
+    <label>header("Accept-Language"):</label>
+    <select name="HEADER_ACCEPT_LANGUAGE">
+        <option value="en">en - English (default)</option>
+        <option value="uk">uk - Ukraine</option>
+        <option value="ru">ru - Russian (without translation)</option>
+        <option value="">"" - empty value</option>
+    </select>
+    <br>
+    <label>image-format:</label>
+    <select name="IMAGE_FORMAT" disabled="true">
+        <option value="jpeg">jpeg - (default)</option>
+        <option value="png">png</option>
+        <option value="invalid">invalid - test invalid format</option>
+        <option value="">"" - empty value (use default)</option>
+    </select>
+</form>
+<li>
+    <button onclick="APP.getPhoto()">Get photo</button>
+</li>
+<div itemid="RESULT" width="100%" style="height: 70vh; border: 1px dotted black">
+    <div itemid="RESULT_TEXT" style="width: 50vw; display: inline-block; overflow: auto; height: 100%">...</div>
+    <div itemid="RESULT_IMAGE_CONTAINER" style="width: 45vw; display: inline-block; overflow: auto; height: 100%">
+        <img itemid="RESULT_IMAGE" src="" alt="img..."/>
+    </div>
+</div>
+
 </body>
 <script>
 	const APP = {
@@ -42,24 +59,36 @@
 			return result;
 		},
 		getPhoto: function() {
-			let url =
-				this.sendByXhr({
-					method: 'GET',
-					url: this.getBaseUrl() + '/photo',
-					body: {
-						hello: 'world'
-					},
-					headers: {
-						'X-API-VERSION': this.getApiVersion(),
-						'Accept-Language': this.getHeaderAcceptLanguage()
-					},
-					onSuccess: function(xhr, json) {
-
-					}.bind(this),
-					onFailure: function(xhr) {
-
-					}.bind(this),
-				});
+			var
+				elResultText = document.querySelector('[itemid="RESULT_TEXT"]'),
+				elResultImage = document.querySelector('[itemid="RESULT_IMAGE"]')
+			;
+			elResultText.innerHTML = '';
+			elResultImage.src = '';
+			this.sendByXhr({
+				method: 'GET',
+				url: this.getBaseUrl() + '/photo',
+				body: {
+					hello: 'world'
+				},
+				headers: {
+					'X-API-VERSION': this.getApiVersion(),
+					'Accept-Language': this.getHeaderAcceptLanguage()
+				},
+				onSuccess: function(xhr, json) {
+					elResultText.innerHTML = xhr.responseText;
+					if (typeof (json.result) === 'object') {
+						if (json.result.data !== undefined
+							&& typeof (json.result.mimetype) === 'string'
+						) {
+							elResultImage.src = 'data:' + json.result.mimetype + ';base64,' + json.result.data; //data:'image/jpeg;base64
+						}
+					}
+				}.bind(this),
+				onFailure: function(xhr) {
+					elResultText.innerHTML = xhr.responseText;
+				}.bind(this),
+			});
 		},
 		/**
 		 *
