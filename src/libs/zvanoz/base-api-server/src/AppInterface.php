@@ -3,32 +3,25 @@
 
 namespace ZVanoZ\BaseApiServer;
 
-
-use ZVanoZ\BaseApiServer\Headers;
+use Psr\Log\LoggerInterface;
 
 interface AppInterface
 {
     public function getAppName(): string;
-
     public function getAppVersion(): string;
-
     public function getAllowApiVersions(): array;
 
-    public function getTranslateHandler(): TranslateHandlerInterface;
-
-    public function getRequest(): RequestInterface;
+    public function getTranslateHandler(): ?TranslateHandlerInterface;
+    public function getRequest(): ?RequestInterface;
+    public function getLogger(): ?LoggerInterface;
 
     function setOptions(Options $options): self;
 
-    function run(
-        ?Options $options = null
-    ): void;
-
-    function init(): void;
+    function run(?Options $options = null): void;
 
     function getXhrHeaders(): Headers;
 
-    function checkApiVersion(): bool;
+    public function isApiVersionAllow(string|int $apiVersion): bool;
 
     /**
      * Метод предназначен для переопроеделения потомками класса

@@ -3,8 +3,7 @@
 
 namespace ZVanoZ\BaseApiServer;
 
-
-use ZVanoZ\BaseApiServer\Headers;
+use Psr\Log\LoggerInterface;
 
 abstract class App
     implements AppInterface
@@ -17,6 +16,7 @@ abstract class App
     protected ResponseInterface $response;
     protected ActionInterface $action;
     protected TranslateHandlerInterface $translateHandler;
+    protected ?LoggerInterface $logger;
 
     public function getAppName(): string
     {
@@ -46,9 +46,19 @@ abstract class App
         return $this->translateHandler;
     }
 
-    function checkApiVersion(): bool
+    public function isApiVersionAllow(
+        string|int $apiVersion
+    ): bool
     {
-        // TODO: Implement checkApiVersion() method.
+        if (empty($apiVersion)) {
+            return false;
+        }
+        $apiVersion = intval($apiVersion);
+        $allowApiVersions = $this->app->getAllowApiVersions();
+        if (!in_array($apiVersion, $allowApiVersions)) {
+            return false;
+        }
+        return true;
     }
 
     public function run(
@@ -61,54 +71,85 @@ abstract class App
         }
         try {
             $this->init();
-            $this->action = $this->router->route();
-            $this->response = $this->action->execute($this);
         } catch (\Throwable $e) {
             $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
                 'success' => false,
+                'message' => 'Error, during initialize of an application',
                 'error' => [
                     'message' => $e->getMessage(),
                     'line' => $e->getLine(),
                     'file' => $e->getFile(),
                     'stack' => $e->getTrace()
                 ]
-            ]);
+            ], 500);
+            $this->response->send();
+            return;
         }
-        $xhrHeaders = $this->getXhrHeaders();
-        $this->response->getHeaders()->setFromHeaders($xhrHeaders);
-        $rawContent = ob_get_contents();
-        ob_end_clean();
-        $this->response->send();
+        try {
+            $logLineContext = [
+                'uri' => $this->getRequest()->getUri(),
+                'origin' => $this->getRequest()->getOrigin(),
+            ];
+            $this->getLogger()->info('start request', $logLineContext);
+            $this->action = $this->router->route();
+            $this->response = $this->action->execute($this);
+            $xhrHeaders = $this->getXhrHeaders();
+            $this->response->getHeaders()->setFromHeaders($xhrHeaders);
+            $rawContent = ob_get_contents();
+            ob_end_clean();
+            $this->response->send();
+        } catch (\Throwable $e) {
+            $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
+                'success' => false,
+                'message' => 'Error, during initialize of an application',
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile(),
+                    'stack' => $e->getTrace()
+                ]
+            ], 500);
+            $this->response->send();
+            return;
+        }
     }
 
     public function init(): void
     {
-        $this->setPhpHandlers();
-        $this->createRequest();
-        $this->createTranslateHandler();
-        $this->createRouter();
+        $this->initPhp();
+        $this->logger = $this->createLogger();
+        $this->request = $this->createRequest();
+        $this->translateHandler = $this->createTranslateHandler();
+        $this->router = $this->createRouter();
     }
 
-    protected function setPhpHandlers()
+    protected function initPhp()
     {
         set_exception_handler([&$this, 'exceptionHandler']);
         set_error_handler([$this, 'errorHandler'], E_ALL);
         register_shutdown_function([$this, 'shutdownFunction']);
     }
 
-    protected function createRequest()
+    protected function createRequest(): RequestInterface
     {
-        $this->request = new Request();
+        return new Request();
     }
 
-    public function getRequest(): RequestInterface
+    public function getRequest(): ?RequestInterface
     {
         return $this->request;
     }
 
-    abstract protected function createTranslateHandler(): void;
+    abstract protected function createLogger(): LoggerInterface;
 
-    abstract protected function createRouter(): void;
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    abstract protected function createTranslateHandler(): TranslateHandlerInterface;
+
+    abstract protected function createRouter(): RouterInterface;
 
     public function getXhrHeaders(): Headers
     {
@@ -137,7 +178,9 @@ abstract class App
         $errFile = $e->getFile();
         $errLine = $e->getLine();
         $errStr = $e->getMessage();
-
+        $this->getLogger()->error(
+            $errMessage
+        );
     }
 
     public function errorHandler(

@@ -30,8 +30,11 @@ class Router
      */
     public function route(): ActionInterface
     {
+        $request = $this->app->getRequest();
+        $headers = $request->getHeaders();
         $uri = $this->app->getRequest()->getUri();
         $method = $this->app->getRequest()->getMethod();
+        $apiVersion = $headers->get('X-API-VERSION');
 
         if (!$this->app->isOriginAllow()) {
             return new OriginNotAllowAction();
@@ -48,7 +51,7 @@ class Router
                     $result = new ServerInfoAction();
                 }
             } else {
-                if (!$this->isApiVersionAllow()) {
+                if (!$this->app->isApiVersionAllow($apiVersion)) {
                     return new ApiVersionNotSupportAction();
                 }
                 if ($method === 'GET') {
