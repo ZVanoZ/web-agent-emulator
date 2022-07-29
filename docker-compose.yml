@@ -13,6 +13,7 @@ services:
       - ./configs:/app/configs
       - ./src/web-agent-server/www:/app/www
       - ./src/web-agent-server/scripts/initialize.sh:/app/scripts/initialize.sh
+      - ./src/libs:/app/www/libs
     env_file:
       - ./.env
   web-agent-client:

@@ -2,3 +2,4 @@
 /.env
 /configs/xdebug.ini
 /src/web-agent-server/www/vendor/
+/src/libs/zvanoz/base-api-server/vendor/

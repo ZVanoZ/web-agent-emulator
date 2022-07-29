@@ -1,5 +1,5 @@
 {
-  "name": "zvanoz/web-agent-emulator",
+  "name": "zvanoz/web-agent-server",
   "type": "project",
   "version": "0.0.1",
   "description": "Emulator of WebAgent service",
@@ -11,7 +11,19 @@
   "config": {
     "sort-packages": true
   },
+  "autoload": {
+    "psr-4": {
+      "WebAgentServer\\": "src/"
+    }
+  },
   "require": {
-    "php": ">=8.1"
-  }
+    "php": ">=8.1",
+    "zvanoz/base-api-server" : "*"
+  },
+
+  "repositories": [
+    {
+      "type": "path",
+      "url": "libs/zvanoz/base-api-server"
+    }]
 }

@@ -6,4 +6,9 @@ cd $(dirname $(readlink -e $0))
 printf '=%.0s' {1..80} && echo ""
 echo '>> '$0
 bash /app/scripts/composer-update.sh
+
+cd /var/www/libs
+echo '>> '
+pwd
+ls -l
 #------------------------------------------------------------------------------
