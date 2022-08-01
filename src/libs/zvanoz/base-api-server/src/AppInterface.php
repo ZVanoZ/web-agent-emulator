@@ -8,11 +8,17 @@ use Psr\Log\LoggerInterface;
 interface AppInterface
 {
     public function getAppName(): string;
+
     public function getAppVersion(): string;
+
     public function getAllowApiVersions(): array;
 
+    public function getTraceId(): ?string;
+
     public function getTranslateHandler(): ?TranslateHandlerInterface;
+
     public function getRequest(): ?RequestInterface;
+
     public function getLogger(): ?LoggerInterface;
 
     function setOptions(Options $options): self;

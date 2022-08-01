@@ -3,13 +3,17 @@
 
 namespace ZVanoZ\BaseApiServer;
 
+use JetBrains\PhpStorm\NoReturn;
+use PHPUnit\Event\Code\Throwable;
 use Psr\Log\LoggerInterface;
+use ZVanoZ\BaseApiServer\Monolog\ContextJournal;
 
 abstract class App
     implements AppInterface
 {
     public const APP_NAME = 'ZVanoZ\BaseApiServer';
     public const APP_VERSION = '0.0.1';
+    protected string $traceId;
     protected array $allowedApiVersions;
     protected RouterInterface $router;
     protected RequestInterface $request;
@@ -72,25 +76,31 @@ abstract class App
         try {
             $this->init();
         } catch (\Throwable $e) {
-            $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
-                'success' => false,
-                'message' => 'Error, during initialize of an application',
-                'error' => [
-                    'message' => $e->getMessage(),
-                    'line' => $e->getLine(),
-                    'file' => $e->getFile(),
-                    'stack' => $e->getTrace()
-                ]
-            ], 500);
-            $this->response->send();
+            $this->sendApplicationError($e);
             return;
         }
         try {
-            $logLineContext = [
+            $logLineContext = new ContextJournal(
+                (new \DateTimeImmutable())->format('U'),
+                $this->getTraceId(),
+                [
+                    'uri' => $this->getRequest()->getUri(),
+                    'origin' => $this->getRequest()->getOrigin(),
+                ]
+            );
+//            $logLineContext = [
+//                'traceId' => $this->getTraceId(),
+//                'uri' => $this->getRequest()->getUri(),
+//                'origin' => $this->getRequest()->getOrigin(),
+//            ];
+            $logLineContext1 = clone $logLineContext;
+            $logLineContext1->message = [
+                'traceId' => $this->getTraceId(),
                 'uri' => $this->getRequest()->getUri(),
                 'origin' => $this->getRequest()->getOrigin(),
             ];
-            $this->getLogger()->info('start request', $logLineContext);
+            $logLineContext1 = $logLineContext1->toArray();
+            $this->getLogger()->info('Start request', $logLineContext1);
             $this->action = $this->router->route();
             $this->response = $this->action->execute($this);
             $xhrHeaders = $this->getXhrHeaders();
@@ -98,18 +108,9 @@ abstract class App
             $rawContent = ob_get_contents();
             ob_end_clean();
             $this->response->send();
+            $this->getLogger()->info('End request', $logLineContext->toArray());
         } catch (\Throwable $e) {
-            $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
-                'success' => false,
-                'message' => 'Error, during initialize of an application',
-                'error' => [
-                    'message' => $e->getMessage(),
-                    'line' => $e->getLine(),
-                    'file' => $e->getFile(),
-                    'stack' => $e->getTrace()
-                ]
-            ], 500);
-            $this->response->send();
+            $this->sendApplicationError($e);
             return;
         }
     }
@@ -117,6 +118,7 @@ abstract class App
     public function init(): void
     {
         $this->initPhp();
+        $this->traceId = $this->createTraceId();
         $this->logger = $this->createLogger();
         $this->request = $this->createRequest();
         $this->translateHandler = $this->createTranslateHandler();
@@ -128,6 +130,17 @@ abstract class App
         set_exception_handler([&$this, 'exceptionHandler']);
         set_error_handler([$this, 'errorHandler'], E_ALL);
         register_shutdown_function([$this, 'shutdownFunction']);
+    }
+
+    public function getTraceId(): ?string
+    {
+        return $this->traceId;
+    }
+
+    protected function createTraceId(): string
+    {
+        $result = uniqid();
+        return $result;
     }
 
     protected function createRequest(): RequestInterface
@@ -169,18 +182,24 @@ abstract class App
         return true;
     }
 
-    public function exceptionHandler(\Throwable $e)
+    public function exceptionHandler(
+        \Throwable $e
+    )
     {
-        $stack = $e->getTrace();
-        //$stack = json_encode($stack, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $errCode = $e->getCode();
-        $errMessage = $e->getMessage();
-        $errFile = $e->getFile();
-        $errLine = $e->getLine();
-        $errStr = $e->getMessage();
-        $this->getLogger()->error(
-            $errMessage
-        );
+        try {
+            $stack = $e->getTrace();
+            //$stack = json_encode($stack, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $errCode = $e->getCode();
+            $errMessage = $e->getMessage();
+            $errFile = $e->getFile();
+            $errLine = $e->getLine();
+            $errStr = $e->getMessage();
+            $this->getLogger()->error(
+                $errMessage
+            );
+        } catch (\Throwable $e) {
+        }
+        $this->sendApplicationError($e);
     }
 
     public function errorHandler(
@@ -191,6 +210,14 @@ abstract class App
         $errcontext = []
     )
     {
+        $data = [
+            'err_no' => $errno,
+            'err_message' => $errstr,
+            'err_file' => $errfile,
+            'err_line' => $errline,
+            'err_context' => $errcontext
+        ];
+        var_dump($data);
     }
 
     public function shutdownFunction()
@@ -221,4 +248,24 @@ abstract class App
         }
     }
 
+    protected function sendApplicationError(
+        Throwable|\Error|\Exception $e
+    )
+    {
+        $rawContent = ob_get_contents();
+        ob_end_clean();
+        $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
+            'success' => false,
+            'message' => 'Application Error',
+            'error' => [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'stack' => $e->getTrace()
+            ],
+            'rawContent' => $rawContent
+        ], 500);
+        $this->response->send();
+        die(-1);
+    }
 }

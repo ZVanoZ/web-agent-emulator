@@ -2,23 +2,19 @@
 
 namespace ZVanoZ\BaseApiServer\Monolog;
 
-if (!class_exists('PDO')) {
-    throw new Exception('class "PDO" is not exists');
-}
-
 use Monolog\Level;
-use Monolog\Logger;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\LogRecord;
 use PDO;
 use PDOStatement;
 
-class PdoHandler
+abstract class PdoHandler
     extends AbstractProcessingHandler
 {
-    private bool $initialized = false;
-    private PDO $pdo;
-    private PDOStatement $statement;
+    protected bool $isInitialized = false;
+    protected PDO $pdo;
+    protected PDOStatement $statementErrors;
+    protected PDOStatement $statementJornal;
 
     public function __construct(
         PDO              $pdo,
@@ -30,51 +26,68 @@ class PdoHandler
         parent::__construct($level, $bubble);
     }
 
+    protected function initialize(): void{
+        if($this->isInitialized){
+            return;
+        }
+        $this->initDb();
+        $this->createStatement();
+        $this->isInitialized = true;
+    }
+    abstract function initDb(): void;
+    abstract function createStatement(): void;
+
     protected function write(
         LogRecord $record
     ): void
     {
-        if (!$this->initialized) {
-            $this->initialize();
+        $this->initialize();
+        if(!array_key_exists('className', $record->context)
+        ){
+            return;
         }
+        $context = Context::createFromArray($record->context);
+        $className = get_class($context);
+        switch ($className){
+            case ContextError::class:
+                $this->writeError($record, $context);
+                break;
+            case ContextJournal::class:
+                $this->writeJournal($record, $context);
+                break;
+            default:
+                //$this->writeError($record);
+        }
+    }
+
+    protected function writeError(
+        LogRecord $record,
+        Context $context
+    )
+    {
+        $context = $record->context;
         $data = [
             'channel' => $record->channel,
-            'level' => $record->level,
+            'trace_id' => $context['traceId'],
+            'level' => $record->level->value,
             'message' => $record->formatted,
             'time' => $record->datetime->format('U'),
         ];
-        $this->statement->execute($data);
-    }
+        $this->statementErrors->execute($data);
 
-    private function initialize()
+    }
+    protected function writeJournal(
+        LogRecord $record,
+        ContextJournal $context
+    )
     {
-        $this->pdo->exec(
-            <<<DDL
-CREATE TABLE IF NOT EXISTS monolog 
-(
-    channel VARCHAR(255), 
-    level INTEGER, 
-    message LONGTEXT, 
-    time INTEGER UNSIGNED
-)
-DDL
-        );
-        $this->statement = $this->pdo->prepare(
-            <<<DDL
-INSERT INTO monolog (
-     channel, 
-     level, 
-     message, 
-     time
-) VALUES (
-    :channel, 
-    :level, 
-    :message, 
-    :time
-)
-DDL
-        );
-
-        $this->initialized = true;
+        $data = [
+            'time' =>  $record->datetime->format('U'),
+            'trace_id' => $context->traceId,
+            'message' => $record->message,
+            'context' => $context->toArray()
+        ];
+        $this->statementErrors->execute($data);
     }
+
 }

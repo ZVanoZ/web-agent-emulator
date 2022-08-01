@@ -4,13 +4,14 @@
 namespace WebAgentServer;
 
 use ZVanoZ\BaseApiServer\{ActionInterface,
+    Monolog\Handler\Pdo\HandlerSqlite3,
     Monolog\PdoHandler,
     Request,
     RequestInterface,
     Response,
     RouterInterface,
-    TranslateHandlerInterface
-};
+    TranslateHandlerInterface};
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Logger;
 use PDO;
 use Psr\Log\LoggerInterface;
@@ -37,7 +38,8 @@ class App
         $result = new Logger($appName);
 
         $pdo = $this->getDb();
-        $pdoHandler = new PdoHandler($pdo);
+        $pdoHandler = new HandlerSqlite3($pdo);
+        $pdoHandler->setFormatter(new JsonFormatter());
         $result->pushHandler($pdoHandler);
 
         return $result;
@@ -69,7 +71,7 @@ class App
                 null,
                 null,
                 array(
-                    PDO::ATTR_PERSISTENT => true
+                    PDO::ATTR_PERSISTENT => false
                 )
             );
         }
