@@ -4,7 +4,7 @@ namespace ZVanoZ\BaseApiServer;
 
 use RuntimeException;
 
-class Exception extends RuntimeException
+class ModuleError extends RuntimeException
 {
     protected $context = [];
 

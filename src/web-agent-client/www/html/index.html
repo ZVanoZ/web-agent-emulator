@@ -25,6 +25,9 @@
         <option value="">"" - empty value</option>
     </select>
     <br>
+    <label>header("X-DEBUG-IS-ALLOW-ORIGIN"):</label>
+    <input name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN" type="checkbox" checked>
+    <br>
     <label>image-format:</label>
     <select name="IMAGE_FORMAT" disabled="true">
         <option value="jpeg">jpeg - (default)</option>
@@ -57,12 +60,17 @@
 			const result = document.querySelector('select[name="HEADER_ACCEPT_LANGUAGE"]').value;
 			return result;
 		},
-		getServerInfo : function() {
+		getHeaderXDebugIsAllowOrigin: function() {
+			const result = document.querySelector('input[name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN"]').checked;
+			return result;
+		},
+		getServerInfo: function() {
 			this.sendByXhr({
 				method: 'GET',
 				url: this.getBaseUrl(),
 				headers: {
-					'Accept-Language': this.getHeaderAcceptLanguage()
+					'Accept-Language': this.getHeaderAcceptLanguage(),
+					'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
 				},
 				onSuccess: function(xhr, json) {
 					elResultText.innerHTML = xhr.responseText;
@@ -94,6 +102,7 @@
 				},
 				headers: {
 					'X-API-VERSION': this.getApiVersion(),
+					'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
 					'Accept-Language': this.getHeaderAcceptLanguage()
 				},
 				onSuccess: function(xhr, json) {

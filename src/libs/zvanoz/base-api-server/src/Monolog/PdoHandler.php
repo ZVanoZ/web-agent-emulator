@@ -7,9 +7,11 @@ use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\LogRecord;
 use PDO;
 use PDOStatement;
+use ZVanoZ\BaseApiServer\Monolog\Context\ErrorContext;
+use ZVanoZ\BaseApiServer\Monolog\Context\JournalContext;
 
 abstract class PdoHandler
-    extends AbstractProcessingHandler
+    extends AbstractHandler
 {
     protected bool $isInitialized = false;
     protected PDO $pdo;
@@ -26,15 +28,18 @@ abstract class PdoHandler
         parent::__construct($level, $bubble);
     }
 
-    protected function initialize(): void{
-        if($this->isInitialized){
+    protected function initialize(): void
+    {
+        if ($this->isInitialized) {
             return;
         }
         $this->initDb();
         $this->createStatement();
         $this->isInitialized = true;
     }
+
     abstract function initDb(): void;
+
     abstract function createStatement(): void;
 
     protected function write(
@@ -42,17 +47,17 @@ abstract class PdoHandler
     ): void
     {
         $this->initialize();
-        if(!array_key_exists('className', $record->context)
-        ){
+        if (!array_key_exists('className', $record->context)
+        ) {
             return;
         }
         $context = Context::createFromArray($record->context);
         $className = get_class($context);
-        switch ($className){
-            case ContextError::class:
+        switch ($className) {
+            case ErrorContext::class:
                 $this->writeError($record, $context);
                 break;
-            case ContextJournal::class:
+            case JournalContext::class:
                 $this->writeJournal($record, $context);
                 break;
             default:
@@ -60,34 +65,36 @@ abstract class PdoHandler
         }
     }
 
-    protected function writeError(
+    public function writeError(
         LogRecord $record,
-        Context $context
-    )
+        ErrorContext   $context
+    ): void
     {
-        $context = $record->context;
         $data = [
-            'channel' => $record->channel,
-            'trace_id' => $context['traceId'],
-            'level' => $record->level->value,
-            'message' => $record->formatted,
             'time' => $record->datetime->format('U'),
+            'trace_id' => $context->traceId,
+            'err_code' => $context->errCode,
+            'err_file' => $context->errFile,
+            'err_line' => $context->errLine,
+            'err_level' => null,
+            'err_message' => $context->errMessage,
+            'context' => $context->__toString(),
         ];
         $this->statementErrors->execute($data);
-
     }
-    protected function writeJournal(
-        LogRecord $record,
-        ContextJournal $context
-    )
+
+    public function writeJournal(
+        LogRecord      $record,
+        JournalContext $context
+    ): void
     {
         $data = [
-            'time' =>  $record->datetime->format('U'),
+            'time' => $record->datetime->format('U'),
             'trace_id' => $context->traceId,
             'message' => $record->message,
-            'context' => $context->toArray()
+            'context' => $context,
         ];
-        $this->statementErrors->execute($data);
+        $this->statementJornal->execute($data);
     }
 
 }

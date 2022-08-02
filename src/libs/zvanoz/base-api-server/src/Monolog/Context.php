@@ -23,7 +23,7 @@ class Context
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->$$offset = $value;
+        $this->$offset = $value;
     }
 
     public function offsetUnset(mixed $offset): void
@@ -66,6 +66,12 @@ class Context
                 }
             }
         }
+        return $result;
+    }
+
+    public function __toString(): string
+    {
+        $result = json_encode($this->toArray(), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         return $result;
     }
 }

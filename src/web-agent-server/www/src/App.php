@@ -3,14 +3,11 @@
 
 namespace WebAgentServer;
 
-use ZVanoZ\BaseApiServer\{ActionInterface,
-    Monolog\Handler\Pdo\HandlerSqlite3,
-    Monolog\PdoHandler,
-    Request,
-    RequestInterface,
-    Response,
+use ZVanoZ\BaseApiServer\{
+    Monolog\Handler\Pdo\Sqlite3Handler,
     RouterInterface,
-    TranslateHandlerInterface};
+    TranslateHandlerInterface
+};
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Logger;
 use PDO;
@@ -38,7 +35,7 @@ class App
         $result = new Logger($appName);
 
         $pdo = $this->getDb();
-        $pdoHandler = new HandlerSqlite3($pdo);
+        $pdoHandler = new Sqlite3Handler($pdo);
         $pdoHandler->setFormatter(new JsonFormatter());
         $result->pushHandler($pdoHandler);
 
@@ -49,14 +46,24 @@ class App
     {
         $result = parent::getXhrHeaders();
         $origin = $this->getRequest()->getOrigin();
-        $result->set('Access-Control-Allow-Origin', $origin);
+        if($this->isOriginAllow()){
+            $result->set('Access-Control-Allow-Origin', $origin);
+        } else {
+            $result->remove('Access-Control-Allow-Origin');
+        }
         return $result;
     }
 
     public function isOriginAllow(): bool
     {
-        // @TODO: add check origin here
-        return true;
+        if ('OPTIONS' === $this->getRequest()->getMethod() ){
+            return true;
+        }
+        $debugHeaderValue = $this->getRequest()->getHeaders()->get('X-DEBUG-IS-ALLOW-ORIGIN');
+        if($debugHeaderValue === 'true'){
+            return true;
+        }
+        return false;
     }
 
     protected function getDb(): PDO

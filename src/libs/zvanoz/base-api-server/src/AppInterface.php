@@ -27,7 +27,11 @@ interface AppInterface
 
     function getXhrHeaders(): Headers;
 
-    public function isApiVersionAllow(string|int $apiVersion): bool;
+    /**
+     * @param {string|int|null} $apiVersion
+     * @return bool
+     */
+    public function isApiVersionAllow($apiVersion): bool;
 
     /**
      * Метод предназначен для переопроеделения потомками класса

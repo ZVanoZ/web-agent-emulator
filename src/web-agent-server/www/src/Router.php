@@ -7,7 +7,8 @@ use ZVanoZ\BaseApiServer\{
     ActionInterface,
     AppInterface,
 };
-use ZVanoZ\BaseApiServer\Action\Json\{Http404Action,
+use ZVanoZ\BaseApiServer\Action\Json\{
+    Http404Action,
     ApiVersionNotSupportAction,
     OriginNotAllowAction,
     OptionsAction,
@@ -43,11 +44,11 @@ class Router
          * @var ActionInterface|null $result
          */
         $result = null;
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        if ($method === 'OPTIONS') {
             $result = new OptionsAction();
         } else {
-            if ($method === 'GET') {
-                if ($uri === '/') {
+            if ($uri === '/') {
+                if ($method === 'GET') {
                     $result = new ServerInfoAction();
                 }
             } else {

@@ -1,9 +1,9 @@
 <?php
 
-namespace ZVanoZ\BaseApiServer\Monolog;
+namespace ZVanoZ\BaseApiServer\Monolog\Context;
 
-class ContextJournal
-    extends Context
+class JournalContext
+    extends \ZVanoZ\BaseApiServer\Monolog\Context
 {
     public array|string $message='';
 

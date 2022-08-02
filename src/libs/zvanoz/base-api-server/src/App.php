@@ -3,10 +3,10 @@
 
 namespace ZVanoZ\BaseApiServer;
 
-use JetBrains\PhpStorm\NoReturn;
 use PHPUnit\Event\Code\Throwable;
 use Psr\Log\LoggerInterface;
-use ZVanoZ\BaseApiServer\Monolog\ContextJournal;
+use ZVanoZ\BaseApiServer\Monolog\Context\ErrorContext;
+use ZVanoZ\BaseApiServer\Monolog\Context\JournalContext;
 
 abstract class App
     implements AppInterface
@@ -50,15 +50,20 @@ abstract class App
         return $this->translateHandler;
     }
 
+    /**
+     * @param {string|int|null} $apiVersion
+     * @return bool
+     * @see AppInterface::isApiVersionAllow()
+     */
     public function isApiVersionAllow(
-        string|int $apiVersion
+        $apiVersion
     ): bool
     {
         if (empty($apiVersion)) {
             return false;
         }
         $apiVersion = intval($apiVersion);
-        $allowApiVersions = $this->app->getAllowApiVersions();
+        $allowApiVersions = $this->getAllowApiVersions();
         if (!in_array($apiVersion, $allowApiVersions)) {
             return false;
         }
@@ -80,35 +85,39 @@ abstract class App
             return;
         }
         try {
-            $logLineContext = new ContextJournal(
-                (new \DateTimeImmutable())->format('U'),
-                $this->getTraceId(),
-                [
-                    'uri' => $this->getRequest()->getUri(),
-                    'origin' => $this->getRequest()->getOrigin(),
-                ]
-            );
-//            $logLineContext = [
-//                'traceId' => $this->getTraceId(),
-//                'uri' => $this->getRequest()->getUri(),
-//                'origin' => $this->getRequest()->getOrigin(),
-//            ];
-            $logLineContext1 = clone $logLineContext;
-            $logLineContext1->message = [
-                'traceId' => $this->getTraceId(),
+            $logLineContext = new JournalContext();
+            $logLineContext->traceId = $this->getTraceId();
+
+            $tmpLogContext = clone $logLineContext;
+            $tmpLogContext->message = [
+                'method' => $this->getRequest()->getMethod(),
                 'uri' => $this->getRequest()->getUri(),
                 'origin' => $this->getRequest()->getOrigin(),
+                'headers' => $this->getRequest()->getHeaders()->getListRef()
             ];
-            $logLineContext1 = $logLineContext1->toArray();
-            $this->getLogger()->info('Start request', $logLineContext1);
+            $tmpLogContext = $tmpLogContext->toArray();
+            $this->getLogger()->info('Request', $tmpLogContext);
+            unset($tmpLogContext);
+
             $this->action = $this->router->route();
             $this->response = $this->action->execute($this);
             $xhrHeaders = $this->getXhrHeaders();
             $this->response->getHeaders()->setFromHeaders($xhrHeaders);
             $rawContent = ob_get_contents();
-            ob_end_clean();
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
             $this->response->send();
-            $this->getLogger()->info('End request', $logLineContext->toArray());
+
+            $tmpLogContext = clone $logLineContext;
+            $tmpLogContext->message = [
+                'code' => $this->response->getHttpCode(),
+                'headers' => $this->response->getHeaders()->getListRef(),
+                'body' => $this->response->getBody()
+            ];
+            $tmpLogContext = $tmpLogContext->toArray();
+            $this->getLogger()->info('Response', $tmpLogContext);
+            unset($tmpLogContext);
         } catch (\Throwable $e) {
             $this->sendApplicationError($e);
             return;
@@ -145,7 +154,9 @@ abstract class App
 
     protected function createRequest(): RequestInterface
     {
-        return new Request();
+        $result = new Request();
+        $result->getHeaders()->appendFromRawRequest();
+        return $result;
     }
 
     public function getRequest(): ?RequestInterface
@@ -217,7 +228,9 @@ abstract class App
             'err_line' => $errline,
             'err_context' => $errcontext
         ];
-        var_dump($data);
+        //var_dump($data);
+        $e = (new ModuleError(__METHOD__))->addContext('data', $data);
+        $this->sendApplicationError($e);
     }
 
     public function shutdownFunction()
@@ -252,9 +265,16 @@ abstract class App
         Throwable|\Error|\Exception $e
     )
     {
+        static $isDone=false;
+        if($isDone){
+           return;
+        }
+        $isDone = true;
         $rawContent = ob_get_contents();
-        ob_end_clean();
-        $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse([
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+        $data = [
             'success' => false,
             'message' => 'Application Error',
             'error' => [
@@ -264,8 +284,31 @@ abstract class App
                 'stack' => $e->getTrace()
             ],
             'rawContent' => $rawContent
-        ], 500);
-        $this->response->send();
-        die(-1);
+        ];
+        if ($this->getLogger() instanceof LoggerInterface) {
+            try {
+                $context = new ErrorContext();
+                $context->traceId = $this->getTraceId();
+                $context->errMessage = $e->getMessage();
+                $context->errCode = $e->getCode();
+                $context->errLine = $e->getLine();
+                $context->errFile = $e->getFile();
+                $context->context = [
+                    'stack' => $e->getTrace(),
+                    'prevError' => $e->getPrevious(),
+                ];
+                $this->getLogger()->error(__METHOD__, $context->toArray());
+            } catch (\Throwable $e) {
+                $data['logError'] = $e;
+            }
+        }
+        try {
+            $this->response = new \ZVanoZ\BaseApiServer\Response\JsonResponse($data, 500);
+            $this->response->getHeaders()->setFromHeaders($this->getXhrHeaders());
+            $this->response->send();
+        } catch (\Throwable $e) {
+            var_dump($e);
+        }
+        die();
     }
 }
