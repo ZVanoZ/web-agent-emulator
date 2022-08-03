@@ -2,168 +2,181 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>web-agent-client</title>
+    <title>web-agent-client (bootstrap 5)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
+            integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13"
+            crossorigin="anonymous"></script>
 </head>
 <body>
+<img src="favicon.ico" width=64 style="position: absolute; right: 1em;bottom: 1em; z-index: 9999">
 
-<img src="favicon.ico" width=64 style="position: absolute; right: 1em">
-<div>
-    <a href="phpinfo.php">phpinfo</a>
+<div class="row">
+    <div class="col-6">
+        <div class="accordion" id="idContainerActions">
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#idOptionsContainer"
+                            aria-expanded="true"
+                            aria-controls="idPhpinfoClientContainer"
+                    >
+                        <span>Базовые опции</span>
+                    </button>
+                </h2>
+                <div id="idOptionsContainer"
+                     class="accordion-collapse collapse show"
+                     aria-labelledby="panelsStayOpen-headingOne"
+                >
+                    <div class="accordion-body">
+
+                        <div class="form-group row">
+                            <label class="col-12"
+                                   for="idBaseUrl"
+                            >Базовый URL</label>
+                            <input type="url"
+                                   class="form-control col-9"
+                                   id="idBaseUrl"
+                                   placeholder="url..."
+                                   name="BASE_URL"
+                                   value="http://127.0.0.1:8022"
+                                   required
+                            >
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="idLanguage"
+                                   class="col-12"
+                            >header("Accept-Language: ...value...")</label>
+                            <select id="idLanguage"
+                                    name="HEADER_ACCEPT_LANGUAGE"
+                                    class="form-control"
+                            >
+                                <option value="en">en - English (default)</option>
+                                <option value="uk">uk - Ukraine</option>
+                                <option value="ru">ru - Russian (without translation)</option>
+                                <option value="">"" - empty value</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-12"
+                                   for="idApiVersion">Версия API header("X-API-VERSION: ...value...")</label>
+                            <input type="url"
+                                   class="form-control col-9"
+                                   id="idApiVersion"
+                                   name="API_VERSION"
+                                   value="1"
+                            >
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="custom-control custom-checkbox">
+                                <input id="idIsAllowOrigin"
+                                       name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN"
+                                       type="checkbox"
+                                       class="custom-control-input"
+                                >
+                                <label for="idIsAllowOrigin"
+                                       class="custom-control-label">header("X-DEBUG-IS-ALLOW-ORIGIN: true")</label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#idPhpinfoClientContainer"
+                            aria-expanded="true"
+                            aria-controls="idPhpinfoClientContainer"
+                    >
+                        <span>phpinfo-client</span>
+                    </button>
+                </h2>
+                <div id="idPhpinfoClientContainer"
+                     class="accordion-collapse show"
+                     aria-labelledby="idPhpinfoClientContainer"
+                >
+                    <div class="accordion-body">
+                        <button class="btn btn-link">GET /phpinfo.php</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#idApiPhotoClientContainer"
+                            aria-expanded="true"
+                            aria-controls="idApiPhotoClientContainer"
+                    >
+                        <span>api "/photo"</span>
+                    </button>
+                </h2>
+                <div id="idApiPhotoClientContainer"
+                     class="accordion-collapse show"
+                     aria-labelledby="idApiPhotoClientContainer"
+                >
+                    <div class="accordion-body">
+                        <button itemid="get-request" class="btn btn-link">GET /photo</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="col-6">
+        <h2 class="col-12 accordion-button">Результат</h2>
+        <div class="d-flex flex-column justify-content-center">
+            <div
+                    class="bs-popover-auto"
+                    style="border: 1px solid red;"
+            >
+                <pre id="idResultPre"
+                     itemid="RESULT_TEXT"
+                ></pre>
+            </div>
+            <div class="bs-popover-auto"
+                 style="border: 1px solid green;">
+                <img id="idResultImage"
+                     itemid="RESULT_IMAGE"
+                     alt="ResultImage..."
+                />
+            </div>
+            <div class="bd-highlight" style="border: 1px solid blue;">
+                <iframe id="idResultIframe" style="width: 100%;height: 100%"></iframe>
+            </div>
+        </div>
+    </div>
 </div>
-<form>
-    <label>Base URL:</label>
-    <input type="text" name='BASE_URL' value="http://127.0.0.1:8022">
-    <br>
-    <label>API version:</label>
-    <input type="text" name='API_VERSION' value="1">
-    <br>
-    <label>header("Accept-Language"):</label>
-    <select name="HEADER_ACCEPT_LANGUAGE">
-        <option value="en">en - English (default)</option>
-        <option value="uk">uk - Ukraine</option>
-        <option value="ru">ru - Russian (without translation)</option>
-        <option value="">"" - empty value</option>
-    </select>
-    <br>
-    <label>header("X-DEBUG-IS-ALLOW-ORIGIN"):</label>
-    <input name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN" type="checkbox" checked>
-    <br>
-    <label>image-format:</label>
-    <select name="IMAGE_FORMAT" disabled="true">
-        <option value="jpeg">jpeg - (default)</option>
-        <option value="png">png</option>
-        <option value="invalid">invalid - test invalid format</option>
-        <option value="">"" - empty value (use default)</option>
-    </select>
-</form>
-<button onclick="APP.getServerInfo()">Get server info</button>
-<button onclick="APP.getPhoto()">Get photo</button>
-<div itemid="RESULT" width="100%" style="height: 70vh; border: 1px dotted black">
-    <div itemid="RESULT_TEXT" style="width: 50vw; display: inline-block; overflow: auto; height: 100%">...</div>
-    <div itemid="RESULT_IMAGE_CONTAINER" style="width: 45vw; display: inline-block; overflow: auto; height: 100%">
-        <img itemid="RESULT_IMAGE" src="" alt="img..."/>
+
+<div class="modal hide" id="idMaskContainer" data-backdrop="static" data-keyboard="false">
+    <div class="modal-header">
+        <h1>Processing...</h1>
+    </div>
+    <div class="modal-body">
+        <div class="progress progress-striped active">
+            <div class="bar" style="width: 50%;"></div>
+        </div>
     </div>
 </div>
 
 </body>
+<script src="App.js"></script>
 <script>
-	const APP = {
-		getBaseUrl: function() {
-			const result = document.querySelector('input[name="BASE_URL"]').value;
-			return result;
-		},
-		getApiVersion: function() {
-			const result = document.querySelector('input[name="API_VERSION"]').value;
-			return result;
-		},
-		getHeaderAcceptLanguage: function() {
-			const result = document.querySelector('select[name="HEADER_ACCEPT_LANGUAGE"]').value;
-			return result;
-		},
-		getHeaderXDebugIsAllowOrigin: function() {
-			const result = document.querySelector('input[name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN"]').checked;
-			return result;
-		},
-		getServerInfo: function() {
-			this.sendByXhr({
-				method: 'GET',
-				url: this.getBaseUrl(),
-				headers: {
-					'Accept-Language': this.getHeaderAcceptLanguage(),
-					'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
-				},
-				onSuccess: function(xhr, json) {
-					elResultText.innerHTML = xhr.responseText;
-					if (typeof (json.result) === 'object') {
-						if (json.result.data !== undefined
-							&& typeof (json.result.mimetype) === 'string'
-						) {
-							elResultImage.src = 'data:' + json.result.mimetype + ';base64,' + json.result.data; //data:'image/jpeg;base64
-						}
-					}
-				}.bind(this),
-				onFailure: function(xhr) {
-					elResultText.innerHTML = xhr.responseText;
-				}.bind(this),
-			});
-		},
-		getPhoto: function() {
-			var
-				elResultText = document.querySelector('[itemid="RESULT_TEXT"]'),
-				elResultImage = document.querySelector('[itemid="RESULT_IMAGE"]')
-			;
-			elResultText.innerHTML = '';
-			elResultImage.src = '';
-			this.sendByXhr({
-				method: 'GET',
-				url: this.getBaseUrl() + '/photo',
-				body: {
-					hello: 'world'
-				},
-				headers: {
-					'X-API-VERSION': this.getApiVersion(),
-					'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
-					'Accept-Language': this.getHeaderAcceptLanguage()
-				},
-				onSuccess: function(xhr, json) {
-					elResultText.innerHTML = xhr.responseText;
-					if (typeof (json.result) === 'object') {
-						if (json.result.data !== undefined
-							&& typeof (json.result.mimetype) === 'string'
-						) {
-							elResultImage.src = 'data:' + json.result.mimetype + ';base64,' + json.result.data; //data:'image/jpeg;base64
-						}
-					}
-				}.bind(this),
-				onFailure: function(xhr) {
-					elResultText.innerHTML = xhr.responseText;
-				}.bind(this),
-			});
-		},
-		/**
-		 *
-		 * @param {Object} options
-		 * @param {string} options.method
-		 * @param {string} options.url
-		 * @param {object|undefined} options.headers
-		 * @param {object|string} options.body
-		 * @param {function} options.onSuccess
-		 * @param {function} options.onFailure
-		 */
-		sendByXhr: function(options) {
-			if (typeof (options.headers) !== 'object') {
-				options.headers = {};
-			}
-			let xhr = new XMLHttpRequest();
-			xhr.open(options.method, options.url);
-			for (headerName in options.headers) {
-				xhr.setRequestHeader(headerName, options.headers[headerName]);
-			}
-			if (!('Accept-Language' in options.headers)) {
-				xhr.setRequestHeader('Accept-Language', 'uk');
-			}
-			if (!('Content-Type' in options.headers)) {
-				xhr.setRequestHeader('Content-Type', 'application/json');
-			}
-			var body = typeof (options.body) === 'object' ? JSON.stringify(options.body) : options.body;
-			xhr.send(body);
-
-			xhr.addEventListener('readystatechange', () => {
-				if (xhr.readyState !== 4) {
-					return;
-				}
-				if (xhr.status !== 200) {
-					return options.onFailure(xhr);
-				}
-				var json;
-				try {
-					json = JSON.parse(xhr.responseText);
-				} catch (e) {
-					console.log(e)
-				}
-				options.onSuccess(xhr, json);
-			});
-		}
-	}
+	document.addEventListener("DOMContentLoaded", () => {
+		APP.run();
+	})
 </script>
 </html>

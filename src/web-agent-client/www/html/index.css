@@ -1,0 +1,8 @@
+.tab-panel{
+    border: 1px solid blue;
+    background-color: gray;
+}
+
+.tab-title.tab-active{
+    background-color: #0f6674;
+}
