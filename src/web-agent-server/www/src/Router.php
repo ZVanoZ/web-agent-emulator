@@ -3,13 +3,11 @@
 
 namespace WebAgentServer;
 
-use ZVanoZ\BaseApiServer\{
-    ActionInterface,
-    AppInterface,
-};
-use ZVanoZ\BaseApiServer\Action\Json\{
-    Http404Action,
+use ZVanoZ\BaseApiServer\{ActionInterface, AppInterface, RequestParam\NotFoundParam};
+use ZVanoZ\BaseApiServer\Action\Json\{Http404Action,
     ApiVersionNotSupportAction,
+    Journal\GetListAction as JournalGetListAction,
+    Journal\GetItemAction as JournalGetItemAction,
     OriginNotAllowAction,
     OptionsAction,
     ServerInfoAction
@@ -58,6 +56,37 @@ class Router
                 if ($method === 'GET') {
                     if ($uri === '/photo') {
                         $result = new PhotoAction();
+                    } else if (preg_match('#/journal((\?{1}.*)|($))#', $uri)) {
+                        $param = $request->getParamOrNull('id');
+
+                        if (!is_null($param)
+                            && !is_null($param->getValueAsInt())
+                        ) {
+                            $result = new JournalGetItemAction(
+                                $this->app->getDb(),
+                                [
+                                    'id' => $param->getValueAsInt()
+                                ]
+                            );
+                        } else {
+                            $searchParams = [];
+                            $param = $request->getParamOrNull('traceId');
+                            if (!is_null($param)) {
+                                $searchParams['trace_id'] = $param->getValueAsString();
+                            }
+                            $param = $request->getParamOrNull('timeFrom');
+                            if (!is_null($param)) {
+                                $searchParams['timeFrom'] = $param->getValueAsInt();
+                            }
+                            $param = $request->getParamOrNull('timeTo');
+                            if (!is_null($param)) {
+                                $searchParams['timeTo'] = $param->getValueAsInt();
+                            }
+                            $result = new JournalGetListAction(
+                                $this->app->getDb(),
+                                $searchParams
+                            );
+                        }
                     }
                 }
             }

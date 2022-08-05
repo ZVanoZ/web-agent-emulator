@@ -12,4 +12,6 @@ interface RequestInterface
     function getMethod(): string;
     function getUri(): string;
     function getOrigin(): ?string;
+    function getParam(string $name):RequestParamInterface;
+    function getParamOrNull(string $name):?RequestParamInterface;
 }

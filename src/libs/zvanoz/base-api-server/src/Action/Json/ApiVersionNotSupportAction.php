@@ -16,6 +16,7 @@ class ApiVersionNotSupportAction
     {
         $allowApiVersions = $app->getAllowApiVersions();
         $result = parent::execute($app)
+            ->setHttpCode(400)
             ->setItem('allowVersions', $allowApiVersions);
         return $result;
     }

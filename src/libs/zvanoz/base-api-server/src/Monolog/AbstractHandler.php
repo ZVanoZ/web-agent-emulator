@@ -15,8 +15,9 @@ abstract class AbstractHandler
 {
     protected bool $isInitialized = false;
 
-    protected function initialize(): void{
-        if($this->isInitialized){
+    protected function initialize(): void
+    {
+        if ($this->isInitialized) {
             return;
         }
         // @NOTE: add your code here
@@ -28,13 +29,12 @@ abstract class AbstractHandler
     ): void
     {
         $this->initialize();
-        if(!array_key_exists('className', $record->context)
-        ){
+        if (!array_key_exists('className', $record->context)) {
             return;
         }
         $context = Context::createFromArray($record->context);
         $className = get_class($context);
-        switch ($className){
+        switch ($className) {
             case ErrorContext::class:
                 $this->writeError($record, $context);
                 break;
@@ -42,17 +42,17 @@ abstract class AbstractHandler
                 $this->writeJournal($record, $context);
                 break;
             default:
-                //$this->writeError($record);
+                return;
         }
     }
 
     abstract function writeError(
-        LogRecord $record,
+        LogRecord    $record,
         ErrorContext $context
-    ):void;
+    ): void;
 
     abstract function writeJournal(
-        LogRecord $record,
+        LogRecord      $record,
         JournalContext $context
-    ):void;
+    ): void;
 }

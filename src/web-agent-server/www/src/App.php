@@ -66,7 +66,7 @@ class App
         return false;
     }
 
-    protected function getDb(): PDO
+    public function getDb(): PDO
     {
         static $result = null;
         if (is_null($result)) {

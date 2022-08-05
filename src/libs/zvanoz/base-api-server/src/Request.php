@@ -5,6 +5,7 @@ namespace ZVanoZ\BaseApiServer;
 
 
 use ZVanoZ\BaseApiServer\Headers;
+use ZVanoZ\BaseApiServer\RequestParam\NotFoundParam;
 
 class Request
     implements RequestInterface
@@ -44,6 +45,28 @@ class Request
         $result = null;
         if (array_key_exists('HTTP_ORIGIN', $_SERVER)) {
             $result = $_SERVER['HTTP_ORIGIN'];
+        }
+        return $result;
+    }
+
+    function getParam(string $name): RequestParamInterface
+    {
+        $result = null;
+        if (array_key_exists($name, $_GET)) {
+            $result = new RequestParam($name, $_GET[$name]);
+        } elseif (array_key_exists($name, $_REQUEST)){
+            $result = new RequestParam($name, $_REQUEST[$name]);
+        } else{
+            $result = new NotFoundParam($name);
+        }
+        return $result;
+    }
+
+    function getParamOrNull(string $name): ?RequestParamInterface
+    {
+        $result = $this->getParam($name);
+        if ($result instanceof NotFoundParam) {
+            return null;
         }
         return $result;
     }

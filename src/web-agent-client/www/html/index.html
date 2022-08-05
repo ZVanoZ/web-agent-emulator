@@ -23,7 +23,7 @@
                             data-bs-toggle="collapse"
                             data-bs-target="#idOptionsContainer"
                             aria-expanded="true"
-                            aria-controls="idPhpinfoClientContainer"
+                            aria-controls="id-PhpinfoClientContainer"
                     >
                         <span>Базовые опции</span>
                     </button>
@@ -76,12 +76,12 @@
 
                         <div class="form-group row">
                             <div class="custom-control custom-checkbox">
-                                <input id="idIsAllowOrigin"
+                                <input id="id-IsAllowOrigin"
                                        name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN"
                                        type="checkbox"
                                        class="custom-control-input"
                                 >
-                                <label for="idIsAllowOrigin"
+                                <label for="id-IsAllowOrigin"
                                        class="custom-control-label">header("X-DEBUG-IS-ALLOW-ORIGIN: true")</label>
                             </div>
                         </div>
@@ -95,16 +95,16 @@
                     <button class="accordion-button"
                             type="button"
                             data-bs-toggle="collapse"
-                            data-bs-target="#idPhpinfoClientContainer"
+                            data-bs-target="#id-PhpinfoClientContainer"
                             aria-expanded="true"
-                            aria-controls="idPhpinfoClientContainer"
+                            aria-controls="id-PhpinfoClientContainer"
                     >
                         <span>phpinfo-client</span>
                     </button>
                 </h2>
-                <div id="idPhpinfoClientContainer"
+                <div id="id-PhpinfoClientContainer"
                      class="accordion-collapse show"
-                     aria-labelledby="idPhpinfoClientContainer"
+                     aria-labelledby="id-PhpinfoClientContainer"
                 >
                     <div class="accordion-body">
                         <button class="btn btn-link">GET /phpinfo.php</button>
@@ -117,44 +117,112 @@
                     <button class="accordion-button"
                             type="button"
                             data-bs-toggle="collapse"
-                            data-bs-target="#idApiPhotoClientContainer"
+                            data-bs-target="#id-ApiGetServerInfoContainer"
                             aria-expanded="true"
-                            aria-controls="idApiPhotoClientContainer"
+                            aria-controls="id-ApiGetServerInfoContainer"
                     >
-                        <span>api "/photo"</span>
+                        <span>api "server-info"</span>
                     </button>
                 </h2>
-                <div id="idApiPhotoClientContainer"
+                <div id="id-ApiGetServerInfoContainer"
                      class="accordion-collapse show"
-                     aria-labelledby="idApiPhotoClientContainer"
+                     aria-labelledby="id-ApiGetServerInfoContainer"
                 >
                     <div class="accordion-body">
-                        <button itemid="get-request" class="btn btn-link">GET /photo</button>
+                        <button itemid="request-get" class="btn btn-link">GET /</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#id-ApiPhotoContainer"
+                            aria-expanded="true"
+                            aria-controls="id-ApiPhotoContainer"
+                    >
+                        <span>api "photo"</span>
+                    </button>
+                </h2>
+                <div id="id-ApiPhotoContainer"
+                     class="accordion-collapse show"
+                     aria-labelledby="id-ApiPhotoContainer"
+                >
+                    <div class="accordion-body">
+                        <button itemid="request-get" class="btn btn-link">GET /photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#id-ApiJournalContainer"
+                            aria-expanded="true"
+                            aria-controls="id-ApiJournalContainer"
+                    >
+                        <span>api "journal"</span>
+                    </button>
+                </h2>
+                <div id="id-ApiJournalContainer"
+                     class="accordion-collapse show"
+                     aria-labelledby="id-ApiJournalContainer"
+                >
+                    <div class="accordion-body">
+                        <form>
+                            <div class="form-group row">
+                                <label class="col-12"
+                                >rowId<input type="url"
+                                          class="form-control col-9"
+                                          name="rowId"
+                                          value=""
+                                >
+                                </label>
+                            </div>
+
+                            <div class="form-group row">
+                                <label class="col-12"
+                                >traceId<input type="url"
+                                               class="form-control col-9"
+                                               name="traceId"
+                                               value=""
+                                >
+                                </label>
+                            </div>
+
+
+                        </form>
+                        <button itemid="request-get" class="btn btn-link">GET /journal</button>
+                        <button itemid="request-delete" class="btn btn-link">DELETE /journal</button>
                     </div>
                 </div>
             </div>
 
         </div>
     </div>
-    <div class="col-6">
-        <h2 class="col-12 accordion-button">Результат</h2>
+
+    <div class="col-6 border border-secondary">
+        <h2 class="col-12 bg-light text-primary">Результат</h2>
         <div class="d-flex flex-column justify-content-center">
             <div
-                    class="bs-popover-auto"
-                    style="border: 1px solid red;"
+                    class="bs-popover-auto border border-primary"
             >
                 <pre id="idResultPre"
                      itemid="RESULT_TEXT"
                 ></pre>
             </div>
-            <div class="bs-popover-auto"
-                 style="border: 1px solid green;">
+            <div class="bs-popover-auto border border-info">
                 <img id="idResultImage"
                      itemid="RESULT_IMAGE"
                      alt="ResultImage..."
                 />
             </div>
-            <div class="bd-highlight" style="border: 1px solid blue;">
+            <div class="bd-highlight border border-success">
                 <iframe id="idResultIframe" style="width: 100%;height: 100%"></iframe>
             </div>
         </div>
@@ -173,6 +241,7 @@
 </div>
 
 </body>
+<script src="Helper.js"></script>
 <script src="App.js"></script>
 <script>
 	document.addEventListener("DOMContentLoaded", () => {

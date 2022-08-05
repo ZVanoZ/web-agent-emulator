@@ -1,16 +1,28 @@
 const APP = {
 	run: function() {
-		document.querySelector('#idPhpinfoClientContainer')
+		document.querySelector('#id-PhpinfoClientContainer')
 			.querySelector('button')
 			.addEventListener(
 				'click',
 				this.handlerPhpinfoClient.bind(this)
 			);
-		document.querySelector('#idApiPhotoClientContainer')
-			.querySelector('button[itemid="get-request"]')
+		document.querySelector('#id-ApiGetServerInfoContainer')
+			.querySelector('button[itemid="request-get"]')
+			.addEventListener(
+				'click',
+				this.handlerApiGetServerInfo.bind(this)
+			);
+		document.querySelector('#id-ApiPhotoContainer')
+			.querySelector('button[itemid="request-get"]')
 			.addEventListener(
 				'click',
 				this.handlerApiPhotoGet.bind(this)
+			);
+		document.querySelector('#id-ApiJournalContainer')
+			.querySelector('button[itemid="request-get"]')
+			.addEventListener(
+				'click',
+				this.handlerApiJournalGet.bind(this)
 			);
 	},
 	mask: {
@@ -35,7 +47,7 @@ const APP = {
 			baseUrl = this.getBaseUrl(),
 			iframeEl = document.getElementById('idResultIframe')
 		;
-		iframeEl.removeAttribute('src');
+		this.cleanResult();
 		iframeEl.onload = () => {
 			console.log('iframe loaded')
 			setTimeout(() => {
@@ -52,8 +64,32 @@ const APP = {
 		//iframeEl.src = baseUrl;
 		iframeEl.src = '/phpinfo.php'
 	},
-	handlerApiPhotoGet:function(){
-		this.getPhoto();
+	handlerApiGetServerInfo: function() {
+		this.apiGetServerInfo();
+	},
+	handlerApiPhotoGet: function() {
+		this.apiGetPhoto();
+	},
+	handlerApiJournalGet: function() {
+		this.apiJournalGet();
+	},
+	Fields: {
+		ApiJournal: {
+			getRowId: function() {
+				const
+					el = document.querySelector('#id-ApiJournalContainer input[name="rowId"]'),
+					result = el.value
+				;
+				return result;
+			},
+			getTraceId: function() {
+				const
+					el = document.querySelector('#id-ApiJournalContainer input[name="traceId"]'),
+					result = el.value
+				;
+				return result;
+			}
+		}
 	},
 	getBaseUrl: function() {
 		const result = document.querySelector('input[name="BASE_URL"]').value;
@@ -71,62 +107,51 @@ const APP = {
 		const result = document.querySelector('input[name="HEADER_X_DEBUG_IS_ALLOW_ORIGIN"]').checked;
 		return result;
 	},
-	getServerInfo: function() {
-		this.sendByXhr({
-			method: 'GET',
-			url: this.getBaseUrl(),
-			headers: {
+	getElResultText: function() {
+		return document.querySelector('[itemid="RESULT_TEXT"]');
+	},
+	getElResultImage: function() {
+		return document.querySelector('[itemid="RESULT_IMAGE"]');
+	},
+	getElResultIframe: function() {
+		return document.getElementById('idResultIframe');
+	},
+	getStandardHeaders: function() {
+		return {
+			'X-API-VERSION': this.getApiVersion(),
+			'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
+			'Accept-Language': this.getHeaderAcceptLanguage()
+		};
+	},
+	apiGetServerInfo: function() {
+		this.cleanResult();
+		const
+			url = this.getBaseUrl(),
+			headers = {
 				'Accept-Language': this.getHeaderAcceptLanguage(),
 				'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
 			},
-			onSuccess: function(xhr, json) {
-				elResultText.innerHTML = xhr.responseText;
-				if (typeof (json.result) === 'object') {
-					if (json.result.data !== undefined
-						&& typeof (json.result.mimetype) === 'string'
-					) {
-						elResultImage.src = 'data:' + json.result.mimetype + ';base64,' + json.result.data; //data:'image/jpeg;base64
-					}
-				}
-			}.bind(this),
-			onFailure: function(xhr) {
-				elResultText.innerHTML = xhr.responseText;
-			}.bind(this),
-		});
-	},
-	getElResultText : function(){
-		return document.querySelector('[itemid="RESULT_TEXT"]');
-	},
-	getElResultImage : function(){
-		return document.querySelector('[itemid="RESULT_IMAGE"]');
-	},
-	getElResultIframe : function(){
-		return document.getElementById('idResultIframe');
-	},
-	getPhoto: function() {
-		var
-			elResultText = this.getElResultText(),
-			elResultImage = this.getElResultImage(),
-			elResultIframe = this.getElResultIframe()
-		;
-		elResultText.innerHTML = '';
-		elResultImage.src = '';
-		elResultIframe.src = '';
-		setTimeout(()=>{
-			this.sendByXhr({
+			options = {
 				method: 'GET',
-				url: this.getBaseUrl() + '/photo',
-				body: {
-					hello: 'world'
-				},
-				headers: {
-					'X-API-VERSION': this.getApiVersion(),
-					'X-DEBUG-IS-ALLOW-ORIGIN': this.getHeaderXDebugIsAllowOrigin(),
-					'Accept-Language': this.getHeaderAcceptLanguage()
-				},
-				onSuccess: function(xhr, json) {
-					elResultText.innerHTML = xhr.responseText;
-					elResultIframe.src = 'data:application/json;text' + xhr.responseText
+				url: url,
+				headers: headers,
+				onSuccess: this.writeXhrResult.bind(this),
+				onFailure: this.writeXhrResult.bind(this)
+			}
+		;
+		Helper.sendByXhr(options);
+	},
+	apiGetPhoto: function() {
+		const
+			elResultImage = this.getElResultImage()
+		;
+		this.cleanResult();
+		setTimeout(() => {
+			const
+				url = this.getBaseUrl() + '/photo',
+				headers = this.getStandardHeaders(),
+				onSuccess = function(xhr, json) {
+					this.writeXhrResult(xhr);
 					if (typeof (json.result) === 'object') {
 						if (json.result.data !== undefined
 							&& typeof (json.result.mimetype) === 'string'
@@ -135,54 +160,72 @@ const APP = {
 						}
 					}
 				}.bind(this),
-				onFailure: function(xhr) {
-					elResultText.innerHTML = xhr.responseText;
-				}.bind(this),
-			});
+				options = {
+					method: 'GET',
+					url: url,
+					headers: headers,
+					onSuccess: onSuccess,
+					onFailure: this.writeXhrResult.bind(this)
+				}
+			;
+			Helper.sendByXhr(options);
 		}, 3000)
+	},
+	apiJournalGet: function() {
+		this.cleanResult();
+		const
+			url = (
+				(url) => {
+					let
+						searchParams = new URLSearchParams(),
+						rowId = this.Fields.ApiJournal.getRowId(),
+						traceId = this.Fields.ApiJournal.getTraceId()
+					;
+					if('' !== rowId){
+						searchParams.set('id', rowId)
+					}
+					if('' !== traceId){
+						searchParams.set('traceId', traceId)
+					}
+					url = url + '?' + searchParams.toString();
+					return url;
+				}
+			)(this.getBaseUrl() + '/journal'),
+			headers = this.getStandardHeaders(),
+			options = {
+				method: 'GET',
+				url: url,
+				headers: headers,
+				onSuccess: this.writeXhrResult.bind(this),
+				onFailure: this.writeXhrResult.bind(this)
+			}
+		;
+		Helper.sendByXhr(options);
+	},
+	cleanResult: function() {
+		var
+			elResultText = this.getElResultText(),
+			elResultImage = this.getElResultImage(),
+			elResultIframe = this.getElResultIframe()
+		;
+		elResultText.innerHTML = '';
+		elResultImage.src = '';
+		elResultIframe.src = '';
 	},
 	/**
 	 *
-	 * @param {Object} options
-	 * @param {string} options.method
-	 * @param {string} options.url
-	 * @param {object|undefined} options.headers
-	 * @param {object|string} options.body
-	 * @param {function} options.onSuccess
-	 * @param {function} options.onFailure
+	 * @param {XMLHttpRequest} xhr
 	 */
-	sendByXhr: function(options) {
-		if (typeof (options.headers) !== 'object') {
-			options.headers = {};
-		}
-		let xhr = new XMLHttpRequest();
-		xhr.open(options.method, options.url);
-		for (headerName in options.headers) {
-			xhr.setRequestHeader(headerName, options.headers[headerName]);
-		}
-		if (!('Accept-Language' in options.headers)) {
-			xhr.setRequestHeader('Accept-Language', 'uk');
-		}
-		if (!('Content-Type' in options.headers)) {
-			xhr.setRequestHeader('Content-Type', 'application/json');
-		}
-		var body = typeof (options.body) === 'object' ? JSON.stringify(options.body) : options.body;
-		xhr.send(body);
+	writeXhrResult: function(xhr) {
+		var
+			elResultText = this.getElResultText(),
+			elResultIframe = this.getElResultIframe()
+		;
+		elResultIframe.src = 'data:application/json;text' + xhr.responseText
 
-		xhr.addEventListener('readystatechange', () => {
-			if (xhr.readyState !== 4) {
-				return;
-			}
-			if (xhr.status !== 200) {
-				return options.onFailure(xhr);
-			}
-			var json;
-			try {
-				json = JSON.parse(xhr.responseText);
-			} catch (e) {
-				console.log(e)
-			}
-			options.onSuccess(xhr, json);
-		});
+		elResultText.innerHTML = 'http code: ' + xhr.status
+			+ '<hr>' + xhr.getAllResponseHeaders()
+			+ '<hr>' + Helper.escapeHtml(xhr.responseText)
+		;
 	}
 }
